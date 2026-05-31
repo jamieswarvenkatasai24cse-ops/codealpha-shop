@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAlpha Shop | Premium Sustainable E-Commerce</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styling -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="logo-area">
+                <a href="#/" class="logo-link">
+                    <span class="logo-accent">CodeAlpha</span> Shop
+                </a>
+            </div>
+            
+            <!-- Smart Search Bar -->
+            <div class="search-area">
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="smart-search" placeholder="Search eco-friendly products..." autocomplete="off">
+                    <button id="search-clear-btn" class="search-clear-btn hidden"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="search-suggestions" class="search-suggestions-dropdown hidden"></div>
+            </div>
+
+            <!-- Header Actions -->
+            <nav class="header-nav">
+                <a href="#/catalog" class="nav-item" id="nav-catalog" title="Catalog">
+                    <i class="fa-solid fa-store"></i>
+                    <span>Shop</span>
+                </a>
+                <a href="#/wishlist" class="nav-item" id="nav-wishlist" title="Wishlist">
+                    <i class="fa-solid fa-heart"></i>
+                    <span>Wishlist</span>
+                    <span class="badge hidden" id="wishlist-badge-count">0</span>
+                </a>
+                <a href="#/compare" class="nav-item" id="nav-compare" title="Compare Products">
+                    <i class="fa-solid fa-code-compare"></i>
+                    <span>Compare</span>
+                    <span class="badge hidden" id="compare-badge-count">0</span>
+                </a>
+                <a href="#/cart" class="nav-item" id="nav-cart" title="Shopping Cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>Cart</span>
+                    <span class="badge" id="cart-badge-count">0</span>
+                </a>
+
+                <!-- Notifications -->
+                <div class="nav-item dropdown-trigger" id="nav-notifications" title="Notifications">
+                    <div class="notification-icon-wrapper">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="badge hidden" id="notif-badge-count">0</span>
+                    </div>
+                    <span>Alerts</span>
+                    <div class="dropdown-menu notification-dropdown hidden" id="notif-dropdown">
+                        <div class="dropdown-header">
+                            <h3>Notifications</h3>
+                            <button id="mark-all-read-btn">Mark all read</button>
+                        </div>
+                        <div class="dropdown-body" id="notif-list">
+                            <p class="empty-notif">No new alerts</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Theme">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Profile / Auth Area -->
+                <div id="auth-area" class="auth-area">
+                    <!-- Loaded dynamically via JavaScript -->
+                    <a href="#/login" class="login-btn">Login</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- App Root Container -->
+    <main id="app-root" class="app-root">
+        <!-- Rendered Dynamically via JS views -->
+    </main>
+
+    <!-- Floating Comparison Bar -->
+    <div id="compare-bar" class="compare-bar hidden">
+        <div class="compare-bar-container">
+            <div class="compare-bar-info">
+                <i class="fa-solid fa-code-compare"></i>
+                <span id="compare-bar-text">2 products selected for comparison</span>
+            </div>
+            <div class="compare-bar-actions">
+                <button id="compare-bar-clear" class="btn-secondary-sm">Clear</button>
+                <a href="#/compare" class="btn-primary-sm">Compare Now</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>CodeAlpha Shop</h3>
+                <p>Bringing sustainable and eco-friendly shopping directly to your doorstep. Experience premium products that preserve the planet.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#"><i class="fa-brands fa-twitter"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h3>Shop</h3>
+                <ul>
+                    <li><a href="#/catalog?category=electronics">Electronics</a></li>
+                    <li><a href="#/catalog?category=fashion">Fashion</a></li>
+                    <li><a href="#/catalog?category=home-kitchen">Home & Kitchen</a></li>
+                    <li><a href="#/catalog?category=eco-friendly">Eco-friendly Specials</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Gamification Info</h3>
+                <p>Buy sustainable goods to earn **Eco Points**! Unlock level upgrades, badges, and exclusive discounts as you shop green.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 CodeAlpha Shop. Pair-programmed with Gemini. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/components.js"></script>
+    <script src="/static/js/views.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

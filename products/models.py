@@ -114,3 +114,19 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.title}"
+
+
+class RestockLog(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='restock_logs')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    quantity_added = models.IntegerField()
+    previous_stock = models.IntegerField()
+    new_stock = models.IntegerField()
+    note = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Restock {self.quantity_added} for {self.product.title} by {self.user.username if self.user else 'system'}"

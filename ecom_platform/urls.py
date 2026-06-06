@@ -5,11 +5,12 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 # Import views
-from authentication.views import RegisterView, UserProfileView, AddressViewSet, LeaderboardView
+from authentication.views import RegisterView, UserProfileView, AddressViewSet, LeaderboardView, CustomTokenObtainPairView
 from products.views import (
     CategoryViewSet, ProductViewSet, RecommendationView, PriceDropWatchViewSet,
     RecentlyViewedViewSet, NotificationViewSet, TrendingProductsView, FlashSaleProductsView
 )
+from products.views import RestockLogViewSet
 from orders.views import CartItemViewSet, WishlistViewSet, OrderViewSet
 from analytics.views import AdminDashboardStatsView, AdminUserViewSet
 
@@ -24,6 +25,7 @@ router.register(r'notifications', NotificationViewSet, basename='notification')
 router.register(r'cart', CartItemViewSet, basename='cart')
 router.register(r'wishlist', WishlistViewSet, basename='wishlist')
 router.register(r'orders', OrderViewSet, basename='order')
+router.register(r'restock-logs', RestockLogViewSet, basename='restock-log')
 router.register(r'admin/users', AdminUserViewSet, basename='admin-user')
 
 urlpatterns = [
@@ -34,7 +36,7 @@ urlpatterns = [
     
     # Custom API endpoints
     path('api/auth/register/', RegisterView.as_view(), name='auth-register'),
-    path('api/auth/login/', TokenObtainPairView.as_view(), name='auth-login'),
+    path('api/auth/login/', CustomTokenObtainPairView.as_view(), name='auth-login'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='auth-refresh'),
     path('api/auth/profile/', UserProfileView.as_view(), name='auth-profile'),
     path('api/leaderboard/', LeaderboardView.as_view(), name='leaderboard'),

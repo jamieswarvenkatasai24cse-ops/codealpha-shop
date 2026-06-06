@@ -27,9 +27,59 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTheme();
 
     // --------------------------------------------------------------------------
+    // NOTIFICATIONS SYSTEM (BELL ICON) - DEFINE EARLY
+    // --------------------------------------------------------------------------
+    const notifBell = document.getElementById('nav-notifications');
+    const notifDrop = document.getElementById('notif-dropdown');
+    const notifList = document.getElementById('notif-list');
+    const notifBadge = document.getElementById('notif-badge-count');
+
+    async function updateNotifications() {
+        if (!API.getAccessToken()) return;
+        try {
+            const alerts = await API.getNotifications();
+            const unread = alerts.filter(a => !a.is_read);
+            
+            if (unread.length) {
+                notifBadge.textContent = unread.length;
+                notifBadge.classList.remove('hidden');
+            } else {
+                notifBadge.classList.add('hidden');
+            }
+
+            if (alerts && alerts.length) {
+                notifList.innerHTML = alerts.map(a => `
+                    <div class="notif-item" style="padding:12px; border-bottom: 1px solid var(--border-color);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <span>${a.title}</span>
+                            <span class="notification-time">${new Date(a.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <p style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">${a.message}</p>
+                    </div>
+                `).join('');
+            } else {
+                notifList.innerHTML = '<p class="empty-notif">No new alerts</p>';
+            }
+        } catch (e) {
+            console.error("Notif update failed:", e);
+        }
+    };
+
+    async function updateCartBadge() {
+        if (!API.getAccessToken()) return;
+        try {
+            const activeItems = await API.getCart(false);
+            const count = activeItems.reduce((acc, item) => acc + item.quantity, 0);
+            const badge = document.getElementById('cart-badge-count');
+            badge.textContent = count;
+            badge.classList.toggle('hidden', count === 0);
+        } catch (e) {}
+    };
+
+    // --------------------------------------------------------------------------
     // AUTHENTICATION STATE & HEADER UPDATE
     // --------------------------------------------------------------------------
-    const updateHeaderAuth = async () => {
+    async function updateHeaderAuth() {
         const authArea = document.getElementById('auth-area');
         const token = API.getAccessToken();
         
@@ -163,14 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestionsBox.classList.add('hidden');
     });
 
-    // --------------------------------------------------------------------------
-    // NOTIFICATIONS SYSTEM (BELL ICON)
-    // --------------------------------------------------------------------------
-    const notifBell = document.getElementById('nav-notifications');
-    const notifDrop = document.getElementById('notif-dropdown');
-    const notifList = document.getElementById('notif-list');
-    const notifBadge = document.getElementById('notif-badge-count');
-
+    // Notification Bell Click Handler
     notifBell.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!API.getAccessToken()) {
@@ -179,37 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         notifDrop.classList.toggle('hidden');
     });
-
-    const updateNotifications = async () => {
-        if (!API.getAccessToken()) return;
-        try {
-            const alerts = await API.getNotifications();
-            const unread = alerts.filter(a => !a.is_read);
-            
-            if (unread.length) {
-                notifBadge.textContent = unread.length;
-                notifBadge.classList.remove('hidden');
-            } else {
-                notifBadge.classList.add('hidden');
-            }
-
-            if (alerts && alerts.length) {
-                notifList.innerHTML = alerts.map(a => `
-                    <div class="notification-item ${!a.is_read ? 'unread' : ''}">
-                        <div class="notification-title">
-                            <span>${a.title}</span>
-                            <span class="notification-time">${new Date(a.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <p style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">${a.message}</p>
-                    </div>
-                `).join('');
-            } else {
-                notifList.innerHTML = '<p class="empty-notif">No new alerts</p>';
-            }
-        } catch (e) {
-            console.error("Notif update failed:", e);
-        }
-    };
 
     document.getElementById('mark-all-read-btn').addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -221,21 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --------------------------------------------------------------------------
-    // BADGES SYNC (CART, WISHLIST, COMPARE)
+    // BADGES & EVENT LISTENERS
     // --------------------------------------------------------------------------
-    const updateCartBadge = async () => {
-        if (!API.getAccessToken()) return;
-        try {
-            const activeItems = await API.getCart(false);
-            const count = activeItems.reduce((acc, item) => acc + item.quantity, 0);
-            const badge = document.getElementById('cart-badge-count');
-            badge.textContent = count;
-            badge.classList.toggle('hidden', count === 0);
-        } catch (e) {}
-    };
-
+    // Cart badge change listener
     window.addEventListener('cart_change', updateCartBadge);
 
+    // Compare badge
     const updateCompareBadge = () => {
         const compareIds = JSON.parse(localStorage.getItem('compare_products') || '[]');
         const count = compareIds.length;
@@ -243,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.textContent = count;
         badge.classList.toggle('hidden', count === 0);
         
-        // Drawer toggle
         const drawer = document.getElementById('compare-bar');
         const text = document.getElementById('compare-bar-text');
         
@@ -262,13 +264,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('compare_products');
         window.dispatchEvent(new Event('compare_change'));
         Components.showToast("Comparison shelf cleared.");
-        // If comparison view is active, refresh it
         if (window.location.hash === '#/compare') {
             window.location.reload();
         }
     });
 
-    // Sync wishlist count badge
+    // Wishlist badge change listener
     const updateWishlistBadge = async () => {
         if (!API.getAccessToken()) return;
         try {
@@ -349,18 +350,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // DYNAMIC HASH-BASED ROUTER
     // --------------------------------------------------------------------------
     const routes = {
-        '': Views.Home,
-        '/': Views.Home,
-        '/catalog': (container, params) => Views.Catalog(container, params),
-        '/product/:id': (container, params, id) => Views.Product(container, id),
-        '/cart': Views.Cart,
-        '/checkout': Views.Checkout,
-        '/profile': Views.Profile,
-        '/compare': Views.Compare,
-        '/wishlist': Views.Wishlist,
-        '/admin': Views.AdminDashboard,
-        '/login': Views.Login,
-        '/register': Views.Register
+        '': (container, params, id) => Views.Home(container, params, id),
+        '/': (container, params, id) => Views.Home(container, params, id),
+        '/catalog': (container, params, id) => Views.Catalog(container, params),
+        '/product/:id': (container, params, id) => Views.Product(container, params, id),
+        '/cart': (container, params, id) => Views.Cart(container, params, id),
+        '/checkout': (container, params, id) => Views.Checkout(container, params, id),
+        '/profile': (container, params, id) => Views.Profile(container, params, id),
+        '/compare': (container, params, id) => Views.Compare(container, params, id),
+        '/wishlist': (container, params, id) => Views.Wishlist(container, params, id),
+        '/admin': (container, params, id) => Views.AdminDashboard(container, params, id),
+        '/login': (container, params, id) => Views.Login(container, params, id),
+        '/register': (container, params, id) => Views.Register(container, params, id)
     };
 
     const router = async () => {

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import viewsets, status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -162,7 +164,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         cart_items.delete()
 
         # Award gamification points: 10% of total order in points
-        points_earned = int(total_amount * 0.1)
+        points_earned = int(total_amount * Decimal('0.1'))
         if points_earned > 0:
             user.add_points(points_earned)
 

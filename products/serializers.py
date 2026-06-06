@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from .models import Category, Product, ProductImage, Review, RecentlyViewed, PriceDropWatch, FlashSale, Notification
+from .models import RestockLog
 
 User = get_user_model()
 
@@ -114,3 +115,13 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'title', 'message', 'is_read', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+class RestockLogSerializer(serializers.ModelSerializer):
+    product_title = serializers.CharField(source='product.title', read_only=True)
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = RestockLog
+        fields = ['id', 'product', 'product_title', 'user', 'username', 'quantity_added', 'previous_stock', 'new_stock', 'note', 'created_at']
+        read_only_fields = ['id', 'created_at', 'product_title', 'username']

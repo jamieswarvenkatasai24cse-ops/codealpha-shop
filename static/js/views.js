@@ -107,7 +107,8 @@ const Views = {
                     const timerInterval = setInterval(() => {
                         if (secondsLeft <= 0) {
                             clearInterval(timerInterval);
-                            document.getElementById('flash-sale-wrapper').classList.add('hidden');
+                            const wrapper = document.getElementById('flash-sale-wrapper');
+                            if (wrapper) wrapper.classList.add('hidden');
                             return;
                         }
                         secondsLeft--;
@@ -115,11 +116,21 @@ const Views = {
                         const mins = Math.floor((secondsLeft % 3600) / 60);
                         const secs = secondsLeft % 60;
                         
-                        document.getElementById('countdown-hours').textContent = hrs.toString().padStart(2, '0');
-                        document.getElementById('countdown-mins').textContent = mins.toString().padStart(2, '0');
-                        document.getElementById('countdown-secs').textContent = secs.toString().padStart(2, '0');
+                        const hoursEl = document.getElementById('countdown-hours');
+                        const minsEl = document.getElementById('countdown-mins');
+                        const secsEl = document.getElementById('countdown-secs');
+                        
+                        if (hoursEl) hoursEl.textContent = hrs.toString().padStart(2, '0');
+                        if (minsEl) minsEl.textContent = mins.toString().padStart(2, '0');
+                        if (secsEl) secsEl.textContent = secs.toString().padStart(2, '0');
                     }, 1000);
                 }
+            }
+
+            // Bind Demo button
+            const demoBtn = document.getElementById('admin-run-demo-btn');
+            if (demoBtn) {
+                demoBtn.addEventListener('click', () => runAdminDemo(container));
             }
         });
 
@@ -331,7 +342,7 @@ const Views = {
     // --------------------------------------------------------------------------
     // PRODUCT DETAILS VIEW
     // --------------------------------------------------------------------------
-    async Product(container, id) {
+    async Product(container, params, id) {
         container.innerHTML = `<div class="product-details-container">${Components.renderProductDetailSkeleton()}</div>`;
         
         try {
@@ -906,8 +917,14 @@ const Views = {
                         // Move to profile to track order
                         window.location.hash = '#/profile';
                     } catch (e) {
-                        const err = JSON.parse(e.message || '{}');
-                        Components.showToast(err.error || "Order placement failed.", "error");
+                        let message = "Order placement failed.";
+                        try {
+                            const err = JSON.parse(e.message || '{}');
+                            message = err.error || err.detail || e.message || message;
+                        } catch (_err) {
+                            message = e.message || message;
+                        }
+                        Components.showToast(message, "error");
                     }
                 });
 
@@ -971,6 +988,20 @@ const Views = {
                     </div>
                 </div>
             </div>
+
+                <div style="margin-top:30px;">
+                    <h3 style="font-family:'Outfit',sans-serif; margin-bottom:12px;">Recent Restock Logs</h3>
+                    <div class="admin-table-wrapper" style="margin-bottom:30px;">
+                        <table class="admin-table" id="admin-restock-logs-table">
+                            <thead>
+                                <tr><th>When</th><th>Product</th><th>By</th><th>Qty</th><th>Prev → New</th><th>Note</th></tr>
+                            </thead>
+                            <tbody id="admin-restock-logs-body">
+                                <tr><td colspan="6" class="text-center text-muted">Loading restock logs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
         `;
 
         try {
@@ -1248,6 +1279,9 @@ const Views = {
             ${this.renderTitle('Admin Operations Dashboard')}
             
             <div class="section-wrapper">
+                <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+                    <button id="admin-run-demo-btn" class="btn-secondary" style="padding:8px 12px;">Run Demo</button>
+                </div>
                 <!-- Stat totals grids -->
                 <div class="admin-grid" id="admin-stats-grid">
                     <div class="skeleton" style="height:100px; border-radius:8px;"></div>
@@ -1272,6 +1306,50 @@ const Views = {
                             <p class="text-muted">Computing distribution...</p>
                         </div>
                     </div>
+                </div>
+
+                <div style="background-color:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; padding:24px; margin-bottom:30px;">
+                    <h3 style="font-family:'Outfit',sans-serif; margin-bottom:16px;">Add New Product</h3>
+                    <form id="admin-add-product-form" style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                        <div>
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Title</label>
+                            <input id="admin-product-title" type="text" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Category</label>
+                            <select id="admin-product-category" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);">
+                                <option value="">Loading categories...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Price</label>
+                            <input id="admin-product-price" type="number" min="0" step="0.01" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Original Price</label>
+                            <input id="admin-product-original-price" type="number" min="0" step="0.01" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Stock</label>
+                            <input id="admin-product-stock" type="number" min="0" step="1" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);">
+                        </div>
+                        <div>
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Eco Score</label>
+                            <input id="admin-product-eco-score" type="number" min="0" max="100" step="1" value="75" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);">
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Image URL</label>
+                            <input id="admin-product-image-url" type="url" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);">
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <label style="display:block; margin-bottom:6px; font-weight:700;">Description</label>
+                            <textarea id="admin-product-description" rows="4" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:8px; background-color:var(--bg-primary); color:var(--text-primary);"></textarea>
+                        </div>
+                        <div style="grid-column: span 2; display:flex; justify-content:flex-end; gap:12px; align-items:center;">
+                            <span id="admin-add-product-feedback" style="font-size:13px; color:var(--text-secondary);"></span>
+                            <button type="submit" class="btn-primary" style="padding:12px 20px;">Add Product</button>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- Action sections: Low stock warnings, list of orders to change status, list of users -->
@@ -1370,32 +1448,251 @@ const Views = {
             `).join('');
 
             // Low Stock list
+            // Confirmation modal helper (lazy-inserted)
+            function confirmRestock(message) {
+                return new Promise(resolve => {
+                    let modal = document.getElementById('confirm-restock-modal');
+                    if (!modal) {
+                        modal = document.createElement('div');
+                        modal.id = 'confirm-restock-modal';
+                        modal.style = 'position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); z-index:9999;';
+                        modal.innerHTML = `
+                            <div style="background:white; padding:20px; border-radius:8px; width:420px; max-width:90%; box-shadow:var(--shadow-md);">
+                                <div id="confirm-restock-message" style="margin-bottom:16px; color:var(--text-primary);"></div>
+                                <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                    <button id="confirm-restock-cancel" class="btn-secondary" style="padding:8px 12px;">Cancel</button>
+                                    <button id="confirm-restock-ok" class="btn-primary" style="padding:8px 12px;">Confirm</button>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+                        document.getElementById('confirm-restock-cancel').addEventListener('click', () => {
+                            modal.style.display = 'none';
+                            resolve(false);
+                        });
+                        document.getElementById('confirm-restock-ok').addEventListener('click', () => {
+                            modal.style.display = 'none';
+                            resolve(true);
+                        });
+                    }
+                    document.getElementById('confirm-restock-message').textContent = message;
+                    modal.style.display = 'flex';
+                });
+            }
+            // Demo modal helper and runner
+            function showDemoModal() {
+                return new Promise(resolve => {
+                    let modal = document.getElementById('admin-demo-modal');
+                    if (!modal) {
+                        modal = document.createElement('div');
+                        modal.id = 'admin-demo-modal';
+                        modal.style = 'position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); z-index:9999;';
+                        modal.innerHTML = `
+                            <div style="background:white; padding:20px; border-radius:8px; width:520px; max-width:96%; box-shadow:var(--shadow-md);">
+                                <h3 style="margin-top:0;">Admin Restock Demo</h3>
+                                <div id="admin-demo-body" style="margin-bottom:12px; color:var(--text-secondary);">This demo will restock up to 2 low-stock products by 5 units each and create restock logs.</div>
+                                <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                    <button id="admin-demo-cancel" class="btn-secondary" style="padding:8px 12px;">Close</button>
+                                    <button id="admin-demo-run" class="btn-primary" style="padding:8px 12px;">Run Demo</button>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+                        document.getElementById('admin-demo-cancel').addEventListener('click', () => {
+                            modal.style.display = 'none';
+                            resolve(null);
+                        });
+                        document.getElementById('admin-demo-run').addEventListener('click', () => {
+                            modal.style.display = 'none';
+                            resolve(true);
+                        });
+                    }
+                    modal.style.display = 'flex';
+                });
+            }
+
+            async function runAdminDemo(container) {
+                const confirmed = await showDemoModal();
+                if (!confirmed) return;
+                try {
+                    const stats = await API.getAdminStats();
+                    const lowStockItems = stats.low_stock || [];
+                    if (!lowStockItems.length) {
+                        Components.showToast('No low-stock items available for demo.', 'error');
+                        return;
+                    }
+                    const toProcess = lowStockItems.slice(0,2);
+                    for (const item of toProcess) {
+                        const pid = item.id;
+                        const p = await API.getProduct(pid);
+                        const add = 5;
+                        const newStock = p.stock + add;
+                        await API.adminUpdateProduct(pid, { stock: newStock });
+                        try {
+                            await API.adminCreateRestockLog({ product: pid, quantity_added: add, previous_stock: p.stock, new_stock: newStock, note: 'Demo run' });
+                        } catch (logErr) {
+                            console.warn('Demo: log failed', logErr);
+                        }
+                    }
+                    Components.showToast('Demo completed: restocked sample products.');
+                    // Refresh dashboard to show updates
+                    await Views.AdminDashboard(container);
+                } catch (e) {
+                    console.error('Demo failed', e);
+                    Components.showToast('Demo failed. Check console for details.', 'error');
+                }
+            }
             const lowStock = stats.low_stock || [];
             const lowStockBody = document.getElementById('admin-low-stock-body');
             if (lowStock.length) {
-                lowStockBody.innerHTML = lowStock.map(p => `
+                // Bulk controls row + individual rows with qty inputs and selection
+                let rows = `
                     <tr>
-                        <td><strong>${p.title}</strong></td>
+                        <td colspan="3" style="padding:8px;">
+                            <input type="number" id="bulk-restock-qty" min="1" value="10" style="width:100px; margin-right:8px; padding:6px; border:1px solid var(--border-color); border-radius:6px;">
+                            <button id="bulk-restock-btn" class="btn-primary-sm" style="padding:6px 10px;">Restock Selected</button>
+                            <span id="bulk-restock-feedback" style="margin-left:12px; color:var(--text-secondary); font-size:13px;"></span>
+                        </td>
+                    </tr>
+                `;
+
+                rows += lowStock.map(p => `
+                    <tr>
+                        <td style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="restock-select" data-id="${p.id}"> <strong>${p.title}</strong> <a href="#/product/${p.id}" class="admin-view-link" style="margin-left:8px; font-size:12px; color:var(--primary-color);">View</a></td>
                         <td style="color:var(--danger-color); font-weight:700;">${p.stock} units</td>
-                        <td><button class="restock-btn btn-primary-sm" data-id="${p.id}" style="padding:4px 8px; font-size:11px; border-radius:4px;">Restock +10</button></td>
+                        <td style="display:flex; gap:8px; align-items:center;"><input type="number" class="restock-qty" data-id="${p.id}" min="1" value="10" style="width:80px; padding:6px; border:1px solid var(--border-color); border-radius:6px;"> <button class="restock-btn btn-primary-sm" data-id="${p.id}" style="padding:6px 10px; font-size:11px; border-radius:4px;">Restock</button></td>
                     </tr>
                 `).join('');
 
+                lowStockBody.innerHTML = rows;
+
+                // Individual restock handlers
                 lowStockBody.querySelectorAll('.restock-btn').forEach(btn => {
                     btn.addEventListener('click', async () => {
                         const pid = btn.dataset.id;
+                        const qtyInput = lowStockBody.querySelector(`.restock-qty[data-id="${pid}"]`);
+                        const qty = qtyInput ? parseInt(qtyInput.value, 10) : 10;
+                        if (isNaN(qty) || qty <= 0) {
+                            Components.showToast('Enter a valid quantity to restock.', 'error');
+                            return;
+                        }
+                        // Confirm with admin before proceeding
+                        const ok = await confirmRestock(`Add ${qty} units to product ID ${pid}?`);
+                        if (!ok) return;
                         try {
                             const p = await API.getProduct(pid);
-                            await API.adminUpdateProduct(pid, { stock: p.stock + 10 });
+                            const newStock = p.stock + qty;
+                            await API.adminUpdateProduct(pid, { stock: newStock });
+                            // Create audit log
+                            try {
+                                await API.adminCreateRestockLog({ product: pid, quantity_added: qty, previous_stock: p.stock, new_stock: newStock, note: '' });
+                            } catch (logErr) {
+                                console.warn('Restock log creation failed:', logErr);
+                            }
                             Components.showToast("Stock updated successfully!");
-                            this.AdminDashboard(container);
+                            await Views.AdminDashboard(container);
                         } catch (e) {
                             Components.showToast("Stock update failed.", "error");
                         }
                     });
                 });
+
+                // Bulk restock handler
+                const bulkBtn = document.getElementById('bulk-restock-btn');
+                if (bulkBtn) {
+                    bulkBtn.addEventListener('click', async () => {
+                        const qtyVal = parseInt(document.getElementById('bulk-restock-qty').value, 10);
+                        const feedbackEl = document.getElementById('bulk-restock-feedback');
+                        feedbackEl.textContent = '';
+                        if (isNaN(qtyVal) || qtyVal <= 0) {
+                            feedbackEl.textContent = 'Enter a valid bulk quantity.';
+                            return;
+                        }
+                        const selected = Array.from(lowStockBody.querySelectorAll('.restock-select:checked')).map(cb => cb.dataset.id);
+                        if (!selected.length) {
+                            feedbackEl.textContent = 'No products selected.';
+                            return;
+                        }
+                        // Confirm bulk restock
+                        const ok = await confirmRestock(`Add ${qtyVal} units to ${selected.length} selected products?`);
+                        if (!ok) return;
+                        try {
+                            // Update each selected product
+                            // Update each selected product and create logs
+                            await Promise.all(selected.map(async pid => {
+                                const p = await API.getProduct(pid);
+                                const newStock = p.stock + qtyVal;
+                                await API.adminUpdateProduct(pid, { stock: newStock });
+                                try {
+                                    await API.adminCreateRestockLog({ product: pid, quantity_added: qtyVal, previous_stock: p.stock, new_stock: newStock, note: '' });
+                                } catch (logErr) {
+                                    console.warn('Bulk restock log failed for', pid, logErr);
+                                }
+                            }));
+                            Components.showToast(`Restocked ${selected.length} products by ${qtyVal} units.`);
+                            await Views.AdminDashboard(container);
+                        } catch (e) {
+                            console.error(e);
+                            Components.showToast('Bulk restock failed.', 'error');
+                        }
+                    });
+                }
             } else {
                 lowStockBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted" style="padding:20px;">All products are well stocked!</td></tr>';
+            }
+
+            // Admin product creation form
+            const categories = await API.getCategories();
+            const categorySelect = document.getElementById('admin-product-category');
+            if (categorySelect) {
+                if (categories && categories.length) {
+                    categorySelect.innerHTML = categories.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+                } else {
+                    categorySelect.innerHTML = '<option value="">No categories available</option>';
+                }
+            }
+
+            const addProductForm = document.getElementById('admin-add-product-form');
+            if (addProductForm) {
+                addProductForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const feedback = document.getElementById('admin-add-product-feedback');
+                    feedback.textContent = '';
+
+                    const title = document.getElementById('admin-product-title').value.trim();
+                    const description = document.getElementById('admin-product-description').value.trim();
+                    const price = parseFloat(document.getElementById('admin-product-price').value);
+                    const originalPrice = parseFloat(document.getElementById('admin-product-original-price').value);
+                    const stock = parseInt(document.getElementById('admin-product-stock').value, 10);
+                    const ecoScore = parseInt(document.getElementById('admin-product-eco-score').value, 10);
+                    const category = parseInt(document.getElementById('admin-product-category').value, 10);
+                    const imageUrl = document.getElementById('admin-product-image-url').value.trim();
+
+                    if (!title || !description || isNaN(price) || isNaN(originalPrice) || isNaN(stock) || isNaN(ecoScore) || isNaN(category)) {
+                        feedback.textContent = 'Please complete all required fields.';
+                        return;
+                    }
+
+                    const productData = {
+                        title,
+                        description,
+                        price,
+                        original_price: originalPrice,
+                        stock,
+                        category,
+                        image_url: imageUrl || null,
+                        eco_score: ecoScore
+                    };
+
+                    try {
+                        await API.adminAddProduct(productData);
+                        Components.showToast('Product added successfully!');
+                        await Views.AdminDashboard(container);
+                    } catch (err) {
+                        console.error(err);
+                        feedback.textContent = 'Failed to create product. Ensure you are logged in as admin.';
+                    }
+                });
             }
 
             // Order management list
@@ -1425,7 +1722,7 @@ const Views = {
                         try {
                             await API.updateOrderStatus(oid, nStatus);
                             Components.showToast(`Order #${oid} status changed to ${nStatus}!`);
-                            this.AdminDashboard(container);
+                            await Views.AdminDashboard(container);
                         } catch (err) {
                             Components.showToast("Fulfillment status change failed.", "error");
                         }
@@ -1433,6 +1730,30 @@ const Views = {
                 });
             } else {
                 ordersBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:20px;">No orders found in database.</td></tr>';
+            }
+
+            // Load recent restock logs for admin audit
+            try {
+                const logs = await API.getRestockLogs({});
+                const logsBody = document.getElementById('admin-restock-logs-body');
+                if (logs && logs.length) {
+                    logsBody.innerHTML = logs.slice(0,10).map(l => `
+                        <tr>
+                            <td style="white-space:nowrap;">${new Date(l.created_at).toLocaleString()}</td>
+                            <td><a href="#/product/${l.product}">${l.product_title || 'Product #' + l.product}</a></td>
+                            <td>${l.username || 'system'}</td>
+                            <td style="font-weight:700;">+${l.quantity_added}</td>
+                            <td>${l.previous_stock} → ${l.new_stock}</td>
+                            <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis;">${l.note || ''}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    logsBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No restock logs yet.</td></tr>';
+                }
+            } catch (e) {
+                console.error('Failed to load restock logs', e);
+                const logsBody = document.getElementById('admin-restock-logs-body');
+                if (logsBody) logsBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Unable to load restock logs.</td></tr>';
             }
 
         } catch (e) {
@@ -1450,7 +1771,7 @@ const Views = {
                 <h2 style="font-family:'Outfit',sans-serif; text-align:center; margin-bottom: 24px;">Login to CodeAlpha Shop</h2>
                 <form id="login-form" style="display:flex; flex-direction:column; gap:16px;">
                     <div>
-                        <label style="font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">Username</label>
+                        <label style="font-size:12.5px; font-weight:700; display:block; margin-bottom:6px;">Username or Email</label>
                         <input type="text" id="login-username" required style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:6px; background-color:var(--bg-primary); color:var(--text-primary); outline:none;">
                     </div>
                     <div>
@@ -1478,7 +1799,9 @@ const Views = {
                 Components.showToast("Welcome back to CodeAlpha Shop!");
                 window.location.hash = '#/';
             } catch (err) {
-                Components.showToast("Invalid credentials. Try demo/demopassword.", "error");
+                console.error('Login failed:', err);
+                const message = err.message || "Invalid credentials. Try demo/demopassword.";
+                Components.showToast(message, "error");
             }
         });
     },

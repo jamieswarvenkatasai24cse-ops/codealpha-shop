@@ -7,10 +7,10 @@ from django.db import models
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from .models import Category, Product, Review, RecentlyViewed, PriceDropWatch, FlashSale, Notification
+from .models import Category, Product, Review, RecentlyViewed, PriceDropWatch, FlashSale, Notification, RestockLog
 from .serializers import (
     CategorySerializer, ProductSerializer, ReviewSerializer, RecentlyViewedSerializer,
-    PriceDropWatchSerializer, NotificationSerializer, FlashSaleSerializer
+    PriceDropWatchSerializer, NotificationSerializer, FlashSaleSerializer, RestockLogSerializer
 )
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -254,3 +254,22 @@ class FlashSaleProductsView(APIView):
         products = Product.objects.filter(id__in=product_ids)
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class RestockLogViewSet(viewsets.ModelViewSet):
+    queryset = RestockLog.objects.all().select_related('product', 'user')
+    serializer_class = RestockLogSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # Optionally filter by product via ?product=<id>
+        product_id = self.request.query_params.get('product', None)
+        if product_id:
+            qs = qs.filter(product_id=product_id)
+        return qs
+
+    def perform_create(self, serializer):
+        # Ensure user is set for audit
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(user=user)

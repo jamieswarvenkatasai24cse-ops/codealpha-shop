@@ -65,7 +65,8 @@ const API = {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(JSON.stringify(errorData) || `API Error: ${response.status}`);
+                const message = errorData.detail || errorData.error || errorData.message || JSON.stringify(errorData) || `API Error: ${response.status}`;
+                throw new Error(message);
             }
 
             // Return json if exists, otherwise status
@@ -136,7 +137,8 @@ const API = {
 
     // Addresses Services
     async getAddresses() {
-        return await this.call('/api/addresses/', 'GET', null, true);
+        const res = await this.call('/api/addresses/', 'GET', null, true);
+        return this.normalizeListResponse(res);
     },
 
     async addAddress(address) {
@@ -157,7 +159,8 @@ const API = {
         });
         const query = urlParams.toString();
         const endpoint = `/api/products/${query ? '?' + query : ''}`;
-        return await this.call(endpoint, 'GET', null, this.getAccessToken() ? true : false);
+        const res = await this.call(endpoint, 'GET', null, this.getAccessToken() ? true : false);
+        return this.normalizeListResponse(res);
     },
 
     async getProduct(id) {
@@ -165,15 +168,18 @@ const API = {
     },
 
     async getSuggestions(q) {
-        return await this.call(`/api/products/suggestions/?q=${encodeURIComponent(q)}`, 'GET');
+        const res = await this.call(`/api/products/suggestions/?q=${encodeURIComponent(q)}`, 'GET');
+        return this.normalizeListResponse(res);
     },
 
     async getFrequentlyBought(id) {
-        return await this.call(`/api/products/${id}/frequently_bought/`, 'GET');
+        const res = await this.call(`/api/products/${id}/frequently_bought/`, 'GET');
+        return this.normalizeListResponse(res);
     },
 
     async getCustomersAlsoViewed(id) {
-        return await this.call(`/api/products/${id}/customers_viewed/`, 'GET');
+        const res = await this.call(`/api/products/${id}/customers_viewed/`, 'GET');
+        return this.normalizeListResponse(res);
     },
 
     async addReview(productId, rating, comment) {
@@ -182,7 +188,8 @@ const API = {
 
     // Price Watch Services
     async getPriceWatches() {
-        return await this.call('/api/price-watches/', 'GET', null, true);
+        const res = await this.call('/api/price-watches/', 'GET', null, true);
+        return this.normalizeListResponse(res);
     },
 
     async watchPrice(productId, targetPrice) {
@@ -193,9 +200,20 @@ const API = {
         return await this.call(`/api/price-watches/${watchId}/`, 'DELETE', null, true);
     },
 
+    normalizeListResponse(res) {
+        if (!res) return [];
+        if (Array.isArray(res)) return res;
+        if (Array.isArray(res.results)) return res.results;
+        if (Array.isArray(res.data)) return res.data;
+        if (Array.isArray(res.items)) return res.items;
+        console.warn('Unexpected list response shape from API:', res);
+        return [];
+    },
+
     // Cart Services
     async getCart(saveForLater = false) {
-        return await this.call(`/api/cart/?save_for_later=${saveForLater}`, 'GET', null, true);
+        const res = await this.call(`/api/cart/?save_for_later=${saveForLater}`, 'GET', null, true);
+        return this.normalizeListResponse(res);
     },
 
     async addToCart(productId, quantity = 1) {
@@ -216,7 +234,8 @@ const API = {
 
     // Wishlist Services
     async getWishlist() {
-        return await this.call('/api/wishlist/', 'GET', null, true);
+        const res = await this.call('/api/wishlist/', 'GET', null, true);
+        return this.normalizeListResponse(res);
     },
 
     async toggleWishlist(productId) {
@@ -225,7 +244,8 @@ const API = {
 
     // Notifications Services
     async getNotifications() {
-        return await this.call('/api/notifications/', 'GET', null, true);
+        const res = await this.call('/api/notifications/', 'GET', null, true);
+        return this.normalizeListResponse(res);
     },
 
     async markNotificationsRead() {
@@ -238,7 +258,8 @@ const API = {
     },
 
     async getOrders() {
-        return await this.call('/api/orders/', 'GET', null, true);
+        const res = await this.call('/api/orders/', 'GET', null, true);
+        return this.normalizeListResponse(res);
     },
 
     async getOrderDetails(orderId) {
@@ -247,20 +268,24 @@ const API = {
 
     // Category lists
     async getCategories() {
-        return await this.call('/api/categories/', 'GET');
+        const res = await this.call('/api/categories/', 'GET');
+        return this.normalizeListResponse(res);
     },
 
     // Recommendation Services
     async getRecommendations() {
-        return await this.call('/api/recommendations/', 'GET', null, this.getAccessToken() ? true : false);
+        const res = await this.call('/api/recommendations/', 'GET', null, this.getAccessToken() ? true : false);
+        return this.normalizeListResponse(res);
     },
 
     async getTrending() {
-        return await this.call('/api/trending/', 'GET', null, this.getAccessToken() ? true : false);
+        const res = await this.call('/api/trending/', 'GET', null, this.getAccessToken() ? true : false);
+        return this.normalizeListResponse(res);
     },
 
     async getFlashSales() {
-        return await this.call('/api/flash-sales/', 'GET', null, this.getAccessToken() ? true : false);
+        const res = await this.call('/api/flash-sales/', 'GET', null, this.getAccessToken() ? true : false);
+        return this.normalizeListResponse(res);
     },
 
     // Admin Dashboard Services
@@ -269,7 +294,8 @@ const API = {
     },
 
     async getAdminUsers() {
-        return await this.call('/api/admin/users/', 'GET', null, true);
+        const res = await this.call('/api/admin/users/', 'GET', null, true);
+        return this.normalizeListResponse(res);
     },
 
     async updateOrderStatus(orderId, status) {
@@ -286,5 +312,18 @@ const API = {
 
     async adminDeleteProduct(id) {
         return await this.call(`/api/products/${id}/`, 'DELETE', null, true);
+    },
+
+    // Restock Logs (Admin)
+    async adminCreateRestockLog(logData) {
+        return await this.call('/api/restock-logs/', 'POST', logData, true);
+    },
+
+    async getRestockLogs(params = {}) {
+        const urlParams = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) urlParams.append(k, v); });
+        const endpoint = `/api/restock-logs/${urlParams.toString() ? '?' + urlParams.toString() : ''}`;
+        const res = await this.call(endpoint, 'GET', null, true);
+        return this.normalizeListResponse(res);
     }
 };
